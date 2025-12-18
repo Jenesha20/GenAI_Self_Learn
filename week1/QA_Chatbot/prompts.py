@@ -1,6 +1,7 @@
 from langchain_core.prompts import PromptTemplate
 
 # Prompt Template
+#the input variable is to define the question received from the user
 prompt = PromptTemplate(
     input_variables=["question"],
     template="""

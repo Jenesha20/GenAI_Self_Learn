@@ -4,6 +4,7 @@ from prompts import prompt
 from dotenv import load_dotenv
 load_dotenv()
 
+#Load from .env file
 os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
 
 
