@@ -11,6 +11,7 @@ from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_core.prompts import PromptTemplate
 
 from langchain_community.tools import DuckDuckGoSearchResults
+from langfuse.callback import CallbackHandler
 
 PG_HOST = os.getenv("PG_HOST")
 PG_PORT = os.getenv("PG_PORT")
@@ -138,9 +139,23 @@ while True:
         print("Bot: Goodbye!")
         break
 
-    # Updated invocation logic
-    result = agent_executor.invoke({"input": user_input})
-    final_answer = result["output"]
-    print(f"Bot: {final_answer}")
+   # Langfuse tracer
+    tracer = CallbackHandler()
+
+    try:
+        result = agent_executor.invoke(
+            {"input": user_input},
+            config={"callbacks": [tracer]}
+        )
+
+        final_answer = result["output"]
+        print(f"Bot: {final_answer}")
+
+        tracer.flush()   # ensures data is sent
+    except Exception as e:
+        print("Bot: Something went wrong.")
+        tracer.flush()
+        raise e
+
 
 

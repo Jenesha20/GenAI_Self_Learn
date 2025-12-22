@@ -5,4 +5,5 @@ langgraph
 duckduckgo-search
 langchain-groq
 psycopg2-binary
-
+langfuse 
+langfuse-langchain
