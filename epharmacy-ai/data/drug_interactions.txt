@@ -1,0 +1,68 @@
+Paracetamol + Alcohol:
+Increased risk of liver toxicity, especially with chronic alcohol use.
+
+Paracetamol + Warfarin:
+Prolonged use may enhance anticoagulant effect and increase bleeding risk.
+
+Ibuprofen + Aspirin:
+Increased risk of gastrointestinal bleeding. Ibuprofen may reduce aspirin’s cardioprotective effect if taken together.
+
+Ibuprofen + Warfarin:
+Significantly increased risk of bleeding. Use only under medical supervision.
+
+Ibuprofen + Corticosteroids:
+Increased risk of gastrointestinal ulceration and bleeding.
+
+Aspirin + Warfarin:
+High risk of bleeding. Avoid combination unless explicitly prescribed.
+
+Aspirin + Methotrexate:
+Reduced methotrexate clearance leading to toxicity.
+
+Aspirin + Alcohol:
+Increased risk of stomach bleeding.
+
+Amoxicillin + Oral Contraceptives:
+Rare reduction in contraceptive effectiveness. Advise backup contraception.
+
+Amoxicillin + Allopurinol:
+Increased risk of skin rash.
+
+Metformin + Alcohol:
+Increased risk of lactic acidosis. Avoid excessive alcohol intake.
+
+Metformin + Cimetidine:
+May increase metformin levels and risk of lactic acidosis.
+
+Cetirizine + Alcohol:
+Enhanced sedation and impaired coordination.
+
+Cetirizine + CNS Depressants:
+Increased drowsiness and reduced alertness.
+
+Warfarin + Antibiotics:
+Some antibiotics may increase bleeding risk by altering gut flora.
+
+NSAIDs + Antihypertensives:
+Reduced blood pressure control and increased kidney risk.
+
+NSAIDs + Diuretics:
+Reduced diuretic effect and increased risk of kidney injury.
+
+Antidiabetic Drugs + Beta Blockers:
+May mask symptoms of hypoglycemia.
+
+ACE Inhibitors + Potassium Supplements:
+Risk of hyperkalemia.
+
+Statins + Grapefruit Juice:
+Increased risk of muscle toxicity (varies by statin).
+
+Benzodiazepines + Opioids:
+Severe respiratory depression risk. Avoid combination.
+
+SSRIs + NSAIDs:
+Increased risk of gastrointestinal bleeding.
+
+MAO Inhibitors + SSRIs:
+Risk of serotonin syndrome. Contraindicated combination.
