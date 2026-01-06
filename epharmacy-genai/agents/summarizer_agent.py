@@ -57,14 +57,11 @@ def summarizer_node(state: GraphState) -> dict:
     elif state.get("drug_interaction_result"):
         answer = state["drug_interaction_result"]
 
+    elif state.get("final_answer"):
+        answer = state["final_answer"]
+
     else:
-        # SHOW INTERNAL STATE FOR DEBUGGING
-        answer = (
-            "⚠ Routing failed.\n"
-            f"Intent: {state.get('intent')}\n"
-            f"Sub-intent: {state.get('sub_intent')}\n"
-            "Please try again."
-        )
+        answer = "How can I help you today?"
 
     return {
         "final_answer": answer,

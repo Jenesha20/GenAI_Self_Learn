@@ -7,7 +7,7 @@ def extract_product_name(text: str) -> str:
     text = re.sub(r"(give me|show me|tell me|about|product|info|details|buy|add)", "", text)
     return text.strip()
 
-def product_info_node(state: GraphState) -> GraphState:
+def product_info_node(state: GraphState) -> dict:
     raw_query = state["messages"][-1]["content"]
     product_name = extract_product_name(raw_query)
 
@@ -20,5 +20,5 @@ def product_info_node(state: GraphState) -> GraphState:
         }
 
     return {
-        "final_answer": "Product not found. Please try again."
+        "final_answer": "Sorry, I couldn’t find that product."
     }

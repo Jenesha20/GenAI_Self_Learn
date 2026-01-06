@@ -1,2 +1,18 @@
+# --- Environment ---
 .env
+
+# --- Python cache ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Data / local artifacts ---
+data/
+
+# --- LangGraph / runtime artifacts ---
+.langgraph_api/
+
+# --- Memory / checkpoints ---
 memory/checkpoints/
+

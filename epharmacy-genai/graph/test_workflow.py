@@ -2,6 +2,7 @@ from graph.state import get_default_state
 from memory.checkpointer import FileCheckpointer
 from graph.runner import WorkflowRunner
 import uuid
+from graph.state_utils import reset_control_state
 
 def run_chatbot():
     print("\n🩺 E-Pharmacy Support Bot")
@@ -34,14 +35,18 @@ def run_chatbot():
             print("Bot: Goodbye! 👋")
             break
 
-        # store user message
+       # store user message
         state["messages"].append({
             "role": "user",
             "content": user_input
         })
 
+        # 🔥 RESET CONTROL STATE (keep memory, reset flow)
+        state = reset_control_state(state)
+
         # run workflow + checkpoint
         state = runner.run(state, conversation_id)
+
 
         print("Bot:", state.get("final_answer", "I couldn't process that."))
 

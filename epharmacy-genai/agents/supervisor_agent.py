@@ -25,13 +25,58 @@
 
 
 from graph.state import GraphState
+from agents.semantic_router import SemanticRouter
+
+# -----------------------------
+# CONFIG
+# -----------------------------
+SAFETY_KEYWORDS = ["suicide", "kill myself", "overdose", "emergency"]
+LOW_CONFIDENCE_THRESHOLD = 0.55
+HIGH_CONFIDENCE_THRESHOLD = 0.75
+
+router = SemanticRouter()
+
 
 def supervisor_node(state: GraphState) -> dict:
-    q = state["messages"][-1]["content"].lower()
+    query = state["messages"][-1]["content"].lower()
 
-    commerce_words = ["buy", "add", "cart", "price", "tablet", "medicine", "paracetamol", "info"]
+    # ------------------------------------------------
+    # 1️⃣ SAFETY GUARDRAIL (hard rules)
+    # ------------------------------------------------
+    if any(k in query for k in SAFETY_KEYWORDS):
+        return {
+            "intent": "general_chat",
+            "is_safety_refusal": True,
+            "risk_level": "high",
+        }
 
-    if any(w in q for w in commerce_words):
-        return {"intent": "product_info"}
+    # ------------------------------------------------
+    # 2️⃣ SEMANTIC ROUTING (primary)
+    # ------------------------------------------------
+    intent, score, all_scores = router.route(query)
 
-    return {"intent": "general_chat"}
+    # ------------------------------------------------
+    # 3️⃣ CONFIDENCE LOGIC
+    # ------------------------------------------------
+    # High confidence → trust router
+    if score >= HIGH_CONFIDENCE_THRESHOLD:
+        return {
+            "intent": intent,
+            "routing_confidence": score,
+        }
+
+    # Medium confidence → allow but cautious
+    if score >= LOW_CONFIDENCE_THRESHOLD:
+        return {
+            "intent": intent,
+            "routing_confidence": score,
+        }
+
+    # ------------------------------------------------
+    # 4️⃣ FALLBACK / GUARDRAIL
+    # ------------------------------------------------
+    return {
+        "intent": "general_chat",
+        "routing_confidence": score,
+        "needs_clarification": True,
+    }

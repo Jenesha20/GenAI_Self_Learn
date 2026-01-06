@@ -16,10 +16,10 @@
 
 from graph.state import GraphState
 
-def general_chat_node(state: GraphState) -> GraphState:
+def general_chat_node(state: GraphState) -> dict:
     q = state["messages"][-1]["content"].lower()
 
-    if any(k in q for k in ["together", "interaction"]):
+    if any(k in q for k in ["together", "interaction", "mix"]):
         return {"sub_intent": "drug_interaction"}
 
     if any(k in q for k in ["how", "what", "when", "where"]):
