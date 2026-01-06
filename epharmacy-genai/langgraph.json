@@ -1,0 +1,9 @@
+{
+    "dependencies": [
+      "."
+    ],
+    "graphs": {
+      "epharmacy_support": "graph/workflow.py:build_workflow"
+    }
+  }
+  
