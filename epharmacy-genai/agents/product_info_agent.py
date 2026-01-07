@@ -4,7 +4,8 @@ from agents.product_query_parser import extract_query_intent
 from tools.postgres_tool import (
     fetch_product_with_stock,
     fetch_products_by_category_with_stock,
-    fetch_all_categories
+    fetch_all_categories,
+    fuzzy_search_products
 )
 from agents.category_resolver import resolve_category
 
@@ -68,6 +69,11 @@ def product_info_node(state: GraphState) -> Dict:
     # -----------------------------
     if results:
         return format_product_response(results)
+
+    fuzzy = fuzzy_search_products(query)
+
+    if fuzzy["status"] == "success" and fuzzy["data"]:
+        return format_product_response(fuzzy["data"])
 
     # -----------------------------
     # 6️⃣ FALLBACK

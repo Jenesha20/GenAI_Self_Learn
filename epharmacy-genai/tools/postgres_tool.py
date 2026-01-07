@@ -239,3 +239,77 @@ def fetch_all_categories() -> Dict:
 
     except Exception as e:
         return {"status": "error", "data": None, "message": str(e)}
+
+
+def fuzzy_search_products(query: str, limit: int = 5) -> Dict:
+    """
+    Fuzzy search with similarity scoring - handles typos & partial names.
+    """
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+
+        sql = """
+        SELECT
+            p.product_id,
+            p.name,
+            c.name AS category,
+            p.price,
+            p.requires_prescription,
+            COALESCE(SUM(i.quantity_in_stock), 0) AS stock_qty,
+            GREATEST(
+                similarity(p.name, %s),
+                similarity(c.name, %s)
+            ) AS score
+        FROM products p
+        JOIN categories c
+            ON p.category_id = c.category_id
+        LEFT JOIN pharmacy_inventory i
+            ON p.product_id = i.product_id
+        WHERE p.is_active = TRUE
+          AND (
+                similarity(p.name, %s) > 0.3
+             OR similarity(c.name, %s) > 0.3
+          )
+        GROUP BY p.product_id, c.name
+        ORDER BY score DESC, p.price ASC
+        LIMIT %s
+        """
+
+        cur.execute(sql, (query, query, query, query, limit))
+        rows = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        if not rows:
+            return {
+                "status": "not_found",
+                "data": [],
+                "message": "No similar products found"
+            }
+
+        products = []
+        for r in rows:
+            products.append({
+                "product_id": r[0],
+                "name": r[1],
+                "category": r[2],
+                "price": float(r[3]),
+                "requires_prescription": bool(r[4]),
+                "stock_qty": int(r[5]),
+                "score": float(r[6]),
+            })
+
+        return {
+            "status": "success",
+            "data": products,
+            "message": "Fuzzy search results"
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "data": None,
+            "message": str(e)
+        }
