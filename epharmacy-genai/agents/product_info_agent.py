@@ -1,66 +1,100 @@
-import re
+from typing import Dict, List
 from graph.state import GraphState
-from tools.postgres_tool import fetch_product_info, fetch_products_by_category
-
-CATEGORY_PATTERNS = [
-    r"products? for (.*)",
-    r"medicines? for (.*)",
-    r"meds for (.*)",
-]
-
-def extract_product_or_category(text: str):
-    text = text.lower()
-
-    for p in CATEGORY_PATTERNS:
-        m = re.search(p, text)
-        if m:
-            return ("category", m.group(1).strip())
-
-    # fallback → single product
-    cleaned = re.sub(
-        r"(give me|show me|tell me|about|product|info|details|buy|add)",
-        "",
-        text,
-    )
-    return ("product", cleaned.strip())
+from agents.product_query_parser import extract_query_intent
+from tools.postgres_tool import (
+    fetch_product_with_stock,
+    fetch_products_by_category_with_stock,
+    fetch_all_categories
+)
+from agents.category_resolver import resolve_category
 
 
-def product_info_node(state: GraphState) -> dict:
-    raw_query = state["messages"][-1]["content"]
-    kind, value = extract_product_or_category(raw_query)
+def product_info_node(state: GraphState) -> Dict:
+    query = state["messages"][-1]["content"]
 
     # -----------------------------
-    # 1️⃣ Category flow
+    # 1️⃣ SEMANTIC EXTRACTION
     # -----------------------------
-    if kind == "category":
-        result = fetch_products_by_category(value)
-
-        if result["status"] == "success" and result["data"]:
-            products = result["data"]
-            names = ", ".join(p["name"] for p in products[:5])
-
-            return {
-                "final_answer": (
-                    f"For {value}, we currently have: {names}. "
-                    "Would you like details for any of these?"
-                )
-            }
-
-        return {
-            "final_answer": f"Sorry, I couldn’t find products for {value}."
-        }
+    params = extract_query_intent(query) or {}
+    params.setdefault("products", [])
+    params.setdefault("category", None)
+    params.setdefault("alternatives", False)
 
     # -----------------------------
-    # 2️⃣ Single product flow
+    # 2️⃣ CATEGORY RESOLUTION (DB-GROUNDED)
     # -----------------------------
-    result = fetch_product_info(value)
+    if params.get("category"):
+        cats = fetch_all_categories()
+        if cats["status"] == "success":
+            match = resolve_category(params["category"], cats["data"])
 
-    if result["status"] == "success":
-        return {
-            "product_data": result["data"],
-            "requires_prescription": result["data"]["requires_prescription"]
-        }
+            if match["matched_category"]:
+                if match["confidence"] >= 0.5:
+                    params["category"] = match["matched_category"]
+                # else → keep original category phrase
+
+    results: List[Dict] = []
+
+    # -----------------------------
+    # 3️⃣ STRATEGY 1 — EXACT PRODUCTS
+    # -----------------------------
+    for name in params.get("products", []):
+        res = fetch_product_with_stock(name)
+        if res["status"] == "success":
+            results.append(res["data"])
+
+    # -----------------------------
+    # 4️⃣ STRATEGY 2 — CATEGORY SEARCH
+    # -----------------------------
+    if not results and params.get("category"):
+        res = fetch_products_by_category_with_stock(params["category"])
+        if res["status"] == "success":
+            results.extend(res["data"])
+
+    # -----------------------------
+    # 4️⃣b RECOVERY CATEGORY SEARCH
+    # -----------------------------
+    if not results:
+        cats = fetch_all_categories()
+        if cats["status"] == "success":
+            match = resolve_category(query, cats["data"])
+            if match["matched_category"]:
+                res = fetch_products_by_category_with_stock(match["matched_category"])
+                if res["status"] == "success":
+                    results.extend(res["data"])
+
+    # -----------------------------
+    # 5️⃣ HANDLE RESULTS
+    # -----------------------------
+    if results:
+        return format_product_response(results)
+
+    # -----------------------------
+    # 6️⃣ FALLBACK
+    # -----------------------------
+    return {
+        "final_answer": (
+            "I couldn’t find a matching product. "
+            "Try searching by brand name (e.g., Crocin) or by category like "
+            "'fever medicine' or 'cold relief'."
+        )
+    }
+
+
+def format_product_response(products: List[Dict]) -> Dict:
+    top = products[:3]
+
+    lines = []
+    for p in top:
+        stock_msg = "In stock" if p["stock_qty"] > 0 else "Out of stock"
+        rx = "Prescription required" if p["requires_prescription"] else "OTC"
+
+        lines.append(
+            f"- {p['name']} — ₹{p['price']} ({rx}, {stock_msg})"
+        )
 
     return {
-        "final_answer": "Sorry, I couldn’t find that product."
+        "final_answer": "Here are some options:\n" + "\n".join(lines),
+        "product_data": top,
+        "requires_prescription": any(p["requires_prescription"] for p in top),
     }

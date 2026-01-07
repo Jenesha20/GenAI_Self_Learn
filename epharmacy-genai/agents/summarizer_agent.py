@@ -47,22 +47,65 @@ from graph.state import GraphState
 
 def summarizer_node(state: GraphState) -> dict:
 
+    answer = None   # 🔥 always initialize
+
+    # -----------------------------
+    # PRODUCT RESPONSE
+    # -----------------------------
     if state.get("product_data"):
         p = state["product_data"]
-        answer = f"{p['name']} costs ₹{p['price']}. Do you want to add it to your cart?"
 
+        # Case 1: multiple products
+        if isinstance(p, list):
+            lines = []
+            for item in p[:3]:
+                stock = item.get("stock_qty", 0)
+                stock_msg = "In stock" if stock > 0 else "Out of stock"
+                rx = "Prescription required" if item.get("requires_prescription") else "OTC"
+
+                lines.append(
+                    f"- {item['name']} — ₹{item['price']} ({rx}, {stock_msg})"
+                )
+
+            answer = (
+                "Here are some options:\n" + "\n".join(lines) +
+                "\n\nWould you like details for any of these?"
+            )
+
+        # Case 2: single product
+        else:
+            answer = (
+                f"{p['name']} costs ₹{p['price']}. "
+                "Do you want to add it to your cart?"
+            )
+
+    # -----------------------------
+    # FAQ RESPONSE
+    # -----------------------------
     elif state.get("faq_result"):
         answer = state["faq_result"]
 
+    # -----------------------------
+    # DRUG INTERACTION RESPONSE
+    # -----------------------------
     elif state.get("drug_interaction_result"):
         answer = state["drug_interaction_result"]
 
+    # -----------------------------
+    # FALLBACK / PRESET ANSWER
+    # -----------------------------
     elif state.get("final_answer"):
         answer = state["final_answer"]
 
+    # -----------------------------
+    # DEFAULT
+    # -----------------------------
     else:
         answer = "How can I help you today?"
 
+    # -----------------------------
+    # UPDATE STATE
+    # -----------------------------
     return {
         "final_answer": answer,
         "messages": [{"role": "assistant", "content": answer}]
