@@ -161,6 +161,8 @@ class GraphState(TypedDict, total=False):
     conversation_id: str
     messages: List[Message]
 
+    memory_notes: List[str]
+
     # --- ROUTING ---
     intent: Optional[str]        # general_chat | product_info
     sub_intent: Optional[str]    # faq | drug_interaction | normal_chat
@@ -189,6 +191,7 @@ def get_default_state() -> GraphState:
     return {
         "messages": [],
         "cart_items": [],
+        "memory_notes": [],
         "risk_level": "low",
         "is_safety_refusal": False,
         "requires_prescription": False,
@@ -198,7 +201,7 @@ def get_default_state() -> GraphState:
 STATE_REDUCERS = {
     "messages": operator.add,
     "cart_items": operator.add,
-
+    "memory_notes": operator.add,
     # overwrite semantics
     "intent": lambda _old, new: new,
     "sub_intent": lambda _old, new: new,

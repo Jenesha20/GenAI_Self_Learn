@@ -4,60 +4,99 @@ from agents.llm_utils import call_llm
 from agents.policies import MEDICAL_DISCLAIMER
 import re
 
-MEDICAL_PATTERNS = [
-    r"take .*",
+# Patterns that are too clinical → redirect elsewhere
+STRICT_MEDICAL_PATTERNS = [
     r"dosage",
-    r"side effects",
+    r"how much",
+    r"how often",
     r"interaction",
-    r"safe to",
+    r"safe to take",
+    r"side effects",
+]
+
+# Patterns that are OK for normal chat (OTC level)
+ALTERNATIVE_PATTERNS = [
+    r"alternatives? for .*",
+    r"substitutes? for .*",
+    r"similar medicines to .*",
 ]
 
 def normal_chat_node(state: GraphState) -> dict:
     query = state["messages"][-1]["content"]
+    q_lower = query.lower()
 
     # -----------------------------
-    # 1️⃣ SAFETY: medical queries should not be here
+    # 1️⃣ Hard safety redirect
     # -----------------------------
-    for p in MEDICAL_PATTERNS:
-        if re.search(p, query.lower()):
+    for p in STRICT_MEDICAL_PATTERNS:
+        if re.search(p, q_lower):
             return {
                 "final_answer": (
-                    "It looks like you’re asking a medical question. "
-                    "Let me route you to the right place to get safe information."
+                    "That sounds like a medical decision. "
+                    "It’s best to consult a doctor or pharmacist for safe guidance."
                 )
             }
 
     # -----------------------------
-    # 2️⃣ Decide: chit-chat or knowledge
+    # 2️⃣ Special case: alternatives
     # -----------------------------
-    is_small_talk = len(query.split()) <= 4
+    is_alternative_query = any(re.search(p, q_lower) for p in ALTERNATIVE_PATTERNS)
+
+    # -----------------------------
+    # 3️⃣ Decide: chit-chat vs knowledge
+    # -----------------------------
+    is_small_talk = len(query.split()) <= 4 and not is_alternative_query
 
     context = ""
     if not is_small_talk:
-        # use search for knowledge
         result = web_search(query)
         if result["status"] == "success":
             context = result["data"]["content"]
 
     # -----------------------------
-    # 3️⃣ LLM rewrite
+    # 4️⃣ LLM rewrite with policy
     # -----------------------------
-    prompt = f"""
+    memory_context = "\n".join(state.get("memory_notes", []))
+
+    if is_alternative_query:
+        instruction = """
+You are a pharmacy assistant.
+The user is asking about alternatives to a medicine.
+
+Rules:
+- Only suggest common OTC alternatives.
+- Do NOT recommend prescription drugs.
+- Be clear that these are general options, not medical advice.
+- End with a suggestion to consult a pharmacist.
+"""
+    else:
+        instruction = """
 You are a friendly pharmacy assistant.
+
+Rules:
+- Answer conversationally and briefly.
+- If information is unclear, say so.
+- For medical uncertainty, advise consulting a doctor or pharmacist.
+"""
+
+    prompt = f"""
+{instruction}
+
+Session memory:
+{memory_context}
 
 User question:
 {query}
 
-Search/context (may be empty):
+Context (may be empty):
 {context}
-
-Instructions:
-- Answer conversationally and briefly.
-- If information is unclear or conflicting, say you are not sure.
-- For medical questions, advise consulting a doctor or pharmacist.
 """
 
     answer = call_llm(prompt)
+
+    # add disclaimer for medical-ish answers
+    if is_alternative_query:
+        answer = answer + MEDICAL_DISCLAIMER
 
     return {
         "final_answer": answer

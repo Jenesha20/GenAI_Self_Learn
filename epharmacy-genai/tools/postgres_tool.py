@@ -61,3 +61,63 @@ def fetch_product_info(product_query: str) -> Dict:
             "data": None,
             "message": str(e)
         }
+    
+def fetch_products_by_category(category_name: str) -> Dict:
+    """
+    Fetch products by category name (e.g., cold, fever, cough).
+    Uses join between products and categories tables.
+    """
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+
+        query = """
+        SELECT 
+            p.product_id,
+            p.name,
+            p.price,
+            p.sku,
+            p.requires_prescription
+        FROM products p
+        JOIN categories c
+            ON p.category_id = c.category_id
+        WHERE c.name ILIKE %s
+          AND p.is_active = TRUE
+        LIMIT 10
+        """
+
+        cur.execute(query, (f"%{category_name}%",))
+        rows = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        if not rows:
+            return {
+                "status": "not_found",
+                "data": [],
+                "message": "No products found for this category"
+            }
+
+        products = []
+        for row in rows:
+            products.append({
+                "product_id": row[0],
+                "name": row[1],
+                "price": float(row[2]),
+                "sku": row[3],
+                "requires_prescription": bool(row[4]),
+            })
+
+        return {
+            "status": "success",
+            "data": products,
+            "message": "Products fetched"
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "data": None,
+            "message": str(e)
+        }

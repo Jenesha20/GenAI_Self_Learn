@@ -35,20 +35,30 @@ def run_chatbot():
             print("Bot: Goodbye! 👋")
             break
 
-       # store user message
+        # -----------------------------
+        # 1️⃣ STORE USER MESSAGE
+        # -----------------------------
         state["messages"].append({
             "role": "user",
             "content": user_input
         })
 
-        # 🔥 RESET CONTROL STATE (keep memory, reset flow)
+        # -----------------------------
+        # 2️⃣ RESET CONTROL STATE
+        #    (keep memory, reset flow)
+        # -----------------------------
         state = reset_control_state(state)
 
-        # run workflow + checkpoint
+        # -----------------------------
+        # 3️⃣ RUN WORKFLOW
+        # -----------------------------
         state = runner.run(state, conversation_id)
 
-
+        # -----------------------------
+        # 4️⃣ PRINT BOT MESSAGE
+        # -----------------------------
         print("Bot:", state.get("final_answer", "I couldn't process that."))
+
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@
 
 from graph.state import GraphState
 from agents.semantic_router import SemanticRouter
+import re
 
 # -----------------------------
 # CONFIG
@@ -34,11 +35,24 @@ SAFETY_KEYWORDS = ["suicide", "kill myself", "overdose", "emergency"]
 LOW_CONFIDENCE_THRESHOLD = 0.55
 HIGH_CONFIDENCE_THRESHOLD = 0.75
 
+# 🔥 High-precision intent overrides
+ALTERNATIVE_PATTERNS = [
+    r"alternatives? for .*",
+    r"substitutes? for .*",
+    r"similar medicines to .*",
+]
+
+CATEGORY_PATTERNS = [
+    r"products? for .*",
+    r"medicines? for .*",
+    r"what .* for .*",
+]
+
 router = SemanticRouter()
 
 
 def supervisor_node(state: GraphState) -> dict:
-    query = state["messages"][-1]["content"].lower()
+    query = state["messages"][-1]["content"].lower().strip()
 
     # ------------------------------------------------
     # 1️⃣ SAFETY GUARDRAIL (hard rules)
@@ -51,21 +65,39 @@ def supervisor_node(state: GraphState) -> dict:
         }
 
     # ------------------------------------------------
-    # 2️⃣ SEMANTIC ROUTING (primary)
+    # 2️⃣ HIGH-PRECISION OVERRIDES
+    # ------------------------------------------------
+
+    # Alternatives → normal/general chat (NOT product flow)
+    for p in ALTERNATIVE_PATTERNS:
+        if re.search(p, query):
+            return {
+                "intent": "general_chat",
+                "routing_confidence": 1.0,
+            }
+
+    # Category browsing → product info
+    for p in CATEGORY_PATTERNS:
+        if re.search(p, query):
+            return {
+                "intent": "product_info",
+                "routing_confidence": 1.0,
+            }
+
+    # ------------------------------------------------
+    # 3️⃣ SEMANTIC ROUTING (primary)
     # ------------------------------------------------
     intent, score, all_scores = router.route(query)
 
     # ------------------------------------------------
-    # 3️⃣ CONFIDENCE LOGIC
+    # 4️⃣ CONFIDENCE LOGIC
     # ------------------------------------------------
-    # High confidence → trust router
     if score >= HIGH_CONFIDENCE_THRESHOLD:
         return {
             "intent": intent,
             "routing_confidence": score,
         }
 
-    # Medium confidence → allow but cautious
     if score >= LOW_CONFIDENCE_THRESHOLD:
         return {
             "intent": intent,
@@ -73,7 +105,7 @@ def supervisor_node(state: GraphState) -> dict:
         }
 
     # ------------------------------------------------
-    # 4️⃣ FALLBACK / GUARDRAIL
+    # 5️⃣ FALLBACK
     # ------------------------------------------------
     return {
         "intent": "general_chat",
