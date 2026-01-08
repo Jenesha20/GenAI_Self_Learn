@@ -89,18 +89,31 @@ def product_info_node(state: GraphState) -> Dict:
 
 def format_product_response(products: List[Dict]) -> Dict:
     top = products[:3]
-
+    
     lines = []
     for p in top:
-        stock_msg = "In stock" if p["stock_qty"] > 0 else "Out of stock"
-        rx = "Prescription required" if p["requires_prescription"] else "OTC"
-
+        stock_msg = "In stock" if p.get("stock_qty", 0) > 0 else "Out of stock"
+        rx = "Prescription required" if p.get("requires_prescription", False) else "OTC"
+        
         lines.append(
-            f"- {p['name']} — ₹{p['price']} ({rx}, {stock_msg})"
+            f"- {p['name']} — ₹{p.get('price', 'N/A')} ({rx}, {stock_msg})"
         )
-
+    
+    # Ensure product has all required fields
+    for product in top:
+        if "requires_prescription" not in product:
+            product["requires_prescription"] = False
+        if "stock_qty" not in product:
+            product["stock_qty"] = 0
+        if "price" not in product:
+            product["price"] = 0
+    
     return {
         "final_answer": "Here are some options:\n" + "\n".join(lines),
-        "product_data": top,
-        "requires_prescription": any(p["requires_prescription"] for p in top),
+        "product_data": top if len(top) > 1 else top[0],  # Single product as dict, multiple as list
+        "requires_prescription": any(p.get("requires_prescription", False) for p in top),
+        "context": {
+            "last_products": top,
+            "last_product_names": [p["name"] for p in top]
+        }
     }

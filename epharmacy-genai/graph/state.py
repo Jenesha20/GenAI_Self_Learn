@@ -149,14 +149,20 @@
 from typing import TypedDict, List, Dict, Optional
 import operator
 
+# -----------------------------
+# MESSAGE TYPE
+# -----------------------------
 class Message(TypedDict):
     role: str   # "user" | "assistant"
     content: str
 
 
+# -----------------------------
+# STATE (MESSAGE-CENTRIC)
+# -----------------------------
 class GraphState(TypedDict, total=False):
 
-    # --- CORE MEMORY ---
+    # --- CORE ---
     user_id: str
     conversation_id: str
     messages: List[Message]
@@ -164,15 +170,31 @@ class GraphState(TypedDict, total=False):
     memory_notes: List[str]
 
     # --- ROUTING ---
-    intent: Optional[str]        # general_chat | product_info
-    sub_intent: Optional[str]    # faq | drug_interaction | normal_chat
+    intent: Optional[str]
+    sub_intent: Optional[str]
+
+    # --- 🔥 DIALOG FLOW CONTROL ---
+    pending_action: Optional[str]
+    # e.g. "choose_product", "awaiting_quantity", "awaiting_prescription"
+
+    active_flow: Optional[str]
+    # e.g. "browsing_products", "adding_to_cart"
+
+    flow_state: Optional[str]  # "awaiting_quantity", "awaiting_prescription", "awaiting_product_select"
+    current_product: Optional[Dict]
+    prescription_status: Optional[str] 
+
+    awaiting_quantity: Optional[bool]
+
+    # --- CONTEXT ---
+    context: Optional[Dict]
 
     # --- PRODUCT ---
     product_data: Optional[Dict]
     requires_prescription: bool
 
     # --- CART ---
-    cart_action: Optional[str]   # add | view
+    cart_action: Optional[str]
     cart_items: List[Dict]
 
     # --- RESULTS ---
@@ -187,11 +209,15 @@ class GraphState(TypedDict, total=False):
     is_safety_refusal: bool
 
 
+
 def get_default_state() -> GraphState:
     return {
         "messages": [],
         "cart_items": [],
         "memory_notes": [],
+        "context": {},
+        "pending_action": None,
+        "active_flow": None,
         "risk_level": "low",
         "is_safety_refusal": False,
         "requires_prescription": False,
@@ -202,9 +228,13 @@ STATE_REDUCERS = {
     "messages": operator.add,
     "cart_items": operator.add,
     "memory_notes": operator.add,
-    # overwrite semantics
+
     "intent": lambda _old, new: new,
     "sub_intent": lambda _old, new: new,
     "product_data": lambda _old, new: new,
     "final_answer": lambda _old, new: new,
+    "context": lambda _old, new: new,
+    "pending_action": lambda _old, new: new,
+    "active_flow": lambda _old, new: new,
 }
+

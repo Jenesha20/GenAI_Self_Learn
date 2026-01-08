@@ -1,6 +1,8 @@
 from graph.workflow import build_workflow
 from memory.checkpointer import FileCheckpointer
 from agents.memory_curator import extract_memory_notes
+from graph.context_resolver import resolve_context   # 🔥 NEW
+
 
 class WorkflowRunner:
     def __init__(self):
@@ -8,14 +10,24 @@ class WorkflowRunner:
         self.checkpointer = FileCheckpointer()
 
     def run(self, state, conversation_id: str):
-        # -----------------------------
-        # RUN GRAPH
-        # -----------------------------
+
+        # ------------------------------------------------
+        # 🔥 1. CONTEXT RESOLUTION (before routing)
+        # ------------------------------------------------
+        try:
+            state = resolve_context(state)
+        except Exception:
+            # context resolution must NEVER break chat
+            pass
+
+        # ------------------------------------------------
+        # 2. RUN GRAPH
+        # ------------------------------------------------
         new_state = self.workflow.invoke(state)
 
-        # -----------------------------
-        # 🧠 LLM-MANAGED SHORT-TERM MEMORY
-        # -----------------------------
+        # ------------------------------------------------
+        # 🧠 3. LLM-MANAGED SHORT-TERM MEMORY
+        # ------------------------------------------------
         try:
             user_msg = state["messages"][-1]["content"]
             bot_msg = new_state.get("final_answer", "")
@@ -35,13 +47,17 @@ class WorkflowRunner:
             # memory failure must NEVER break chat
             pass
 
-        # -----------------------------
-        # SAVE CHECKPOINT
-        # -----------------------------
-        self.checkpointer.save(
-            conversation_id=conversation_id,
-            state=new_state,
-            current_node="END"
-        )
+        # ------------------------------------------------
+        # 4. SAVE CHECKPOINT
+        # ------------------------------------------------
+        try:
+            self.checkpointer.save(
+                conversation_id=conversation_id,
+                state=new_state,
+                current_node="END"
+            )
+        except Exception:
+            # checkpoint failure must NEVER break chat
+            pass
 
         return new_state

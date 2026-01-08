@@ -5,33 +5,42 @@ INTENT_EXAMPLES = {
     # =====================================================
     "product_info": [
 
-        # --- direct product queries ---
+        # --- direct product queries (pattern-based) ---
+        "I want to buy this medicine",
+        "Tell me the price of this tablet",
+        "How much does this medicine cost?",
+        "Give me info about this drug",
+        "Do you have this medicine in stock?",
+        "Is this tablet available today?",
+
+        # keep a FEW real examples only for grounding
         "I want to buy paracetamol",
         "Tell me the price of crocin",
-        "How much does dolo 650 cost?",
-        "Give me info about xyzal",
-        "Do you have azithromycin in stock?",
-        "Is paracetamol available today?",
 
         # --- category based ---
-        "What medicines do you have for cold?",
-        "Show products for fever",
-        "List medicines for headache",
-        "What are the products available for cough?",
-        "Do you have medicines for allergy?",
+        "What medicines do you have for this problem?",
+        "Show products for this condition",
+        "List medicines for this illness",
+        "What are the products available for this symptom?",
+        "Do you have medicines for this allergy?",
         "Which medicines are there for stomach pain?",
 
-        # --- alternatives / substitutes ---
+        # --- alternatives / substitutes (GENERALIZED) ---
+        "What are the alternatives for this medicine?",
+        "Any substitute for this tablet?",
+        "Similar medicines to this drug?",
+        "What can I take instead of this medicine?",
+        "Other options instead of this tablet",
+        "Cheaper alternatives for this medicine",
+
+        # keep 1–2 real examples only
         "What are the alternatives for paracetamol?",
         "Any substitute for crocin?",
-        "Similar medicines to dolo 650?",
-        "Other options instead of ibuprofen",
-        "Cheaper alternatives for fever medicine",
 
         # --- availability / stock ---
-        "Is paracetamol in stock?",
-        "Do you have this medicine right now?",
-        "Which fever medicines are available today?",
+        "Is this medicine in stock?",
+        "Do you have this tablet right now?",
+        "Which medicines are available today?",
     ],
 
     # =====================================================
@@ -39,8 +48,8 @@ INTENT_EXAMPLES = {
     # =====================================================
     "cart_action": [
         "Add this to my cart",
-        "Put it in my cart",
-        "Remove this item",
+        "Put this in my cart",
+        "Remove this item from my cart",
         "Delete this from my cart",
         "Show my cart",
         "What is in my cart?",
@@ -51,14 +60,18 @@ INTENT_EXAMPLES = {
     # DRUG INTERACTION — safety-critical
     # =====================================================
     "drug_interaction": [
+
+        # generalized patterns
+        "Can I take this medicine with another one?",
+        "Is it safe to combine these medicines?",
+        "What happens if I mix two medicines?",
+        "Can I take this tablet with alcohol?",
+        "Is it okay to take one medicine with another?",
+
+        # keep a few real examples
         "Can I take dolo with ibuprofen?",
         "Is paracetamol safe with alcohol?",
-        "What happens if I mix these medicines?",
-        "Can I take crocin with antibiotics?",
-        "Is it okay to take painkiller with cold medicine?",
         "Can I take aspirin and warfarin together?",
-        "Is it safe to combine two fever medicines?",
-        "Mixing cough syrup and alcohol — is it safe?",
     ],
 
     # =====================================================
@@ -90,7 +103,7 @@ INTENT_EXAMPLES = {
         # --- health education (NOT shopping) ---
         "What is fever?",
         "What are the symptoms of cold?",
-        "How does paracetamol work?",
+        "How does this medicine work?",
         "What causes headache?",
         "Why do people get allergies?",
         "What is the difference between viral and bacterial infection?",

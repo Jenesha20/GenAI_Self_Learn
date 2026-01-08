@@ -1,22 +1,8 @@
-# from graph.state import GraphState
-
-# def general_chat_node(state: GraphState) -> GraphState:
-#     query = state.get("user_query", "").lower()
-
-#     if any(k in query for k in ["together", "interaction", "mix"]):
-#         state["sub_intent"] = "drug_interaction"
-#     elif any(k in query for k in ["how", "what", "when", "where"]):
-#         state["sub_intent"] = "faq"
-#     else:
-#         state["sub_intent"] = "normal_chat"
-
-#     state["current_node"] = "general_chat"
-#     return state
-
-
 from graph.state import GraphState
 from agents.semantic_router import SemanticRouter
 from agents.router_examples import INTENT_EXAMPLES
+from agents.llm_intent_classifier import llm_classify_intent
+
 import re
 
 SUB_INTENT_EXAMPLES = {
@@ -73,4 +59,13 @@ def general_chat_node(state: GraphState) -> dict:
     # ------------------------------------------------
     # 4️⃣ FALLBACK
     # ------------------------------------------------
+    llm_label = llm_classify_intent(text)
+
+    # Map top-level intent to sub-intent
+    if llm_label == "drug_interaction":
+        return {"sub_intent": "drug_interaction"}
+
+    if llm_label == "faq":
+        return {"sub_intent": "faq"}
+
     return {"sub_intent": "normal_chat"}
