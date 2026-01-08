@@ -1,0 +1,28 @@
+/* styles.css */
+.stButton > button {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.stTextInput > div > div > input {
+    border-radius: 10px;
+}
+
+.css-1d391kg {
+    padding-top: 2rem;
+}
+
+/* Custom chat bubbles */
+[data-testid="stChatMessage"] {
+    padding: 1rem;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background-color: #f0f2f6;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
+    background-color: #e6f7ff;
+}
